@@ -104,18 +104,12 @@ def possible_combinations(prod, classifier):
     '''Verwendet den Classifier aus der nearest_neighbor() Funktion
     und gibt eine Liste mit allen Kombinationen zurück, die das gewünschte
     Ergebnis geliefert haben.'''
-    predictions = [
-        {
-            "params": i,
-            "value": classifier.predict(np.array(i).reshape(1, -1))
-        }
-        for i in prod
-
-    ]
     all_combos = [
-        prediction['params']
-        for prediction in predictions
-        if prediction['value'] == False
+        i
+        for i in prod
+        if classifier.predict(
+            np.array(i).reshape(1, -1)
+        ) == False
     ]
     possible_combos = values_in_list(all_combos)
     return possible_combos
