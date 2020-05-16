@@ -20,11 +20,10 @@ def read_file():
     return conc_sheet
 
 
-def drop_useless_rows(df, *args):
+def drop_useless_rows(df, *columns):
     '''Erstellt einen Dataframe, der nur aus den gewünschten Spalten besteht.
     In diesem Dataframe werden alle Zeilen, die fehlende Werte enthalten gelöscht.'''
-    drop = [i for i in df if i not in args]
-    reduced_df = df.drop(drop, 1)
+    reduced_df = df[ list(columns) ]
     clean_df = reduced_df.dropna(axis=0)
     return clean_df
 
