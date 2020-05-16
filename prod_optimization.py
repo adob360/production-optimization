@@ -44,15 +44,6 @@ def nearest_neighbor(X, y):
     return clf
 
 
-def values_in_df(target, df):
-    '''Prüft, welche Werte in einer bestimmten Spalte eines DataFrames vorkommen und packt diese in eine Liste'''
-    value_list = []
-    for value in df[target]:
-        if value not in value_list:
-            value_list.append(value)
-    return value_list
-
-
 def values_in_list(two_d_list):
     '''Nimmt eine zweidimensionale Liste, dreht sie um 90 Grad und schaut,
     dass ein Wert in einer Zeile nur einmal vorkommt.'''
@@ -72,7 +63,7 @@ def values_in_list(two_d_list):
 
 def all_combinations(df, *params):
     '''Gibt alle möglichen Kombinationen von einer variablen Anzahl an Listen zurück'''
-    value_list = [values_in_df(i, df) for i in params]
+    value_list = [df[i].unique() for i in params]
     if len(value_list) == 1:
         return "You are an idiot, you should at least enter two parameters!!"
     else:
