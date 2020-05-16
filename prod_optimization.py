@@ -6,8 +6,19 @@ from itertools import product
 
 def read_file():
     '''Liest ein Excel File ein und hängt die Tabellenblätter untereinander zusammen.'''
+    def is_equal_to_x(value):
+        return value == 'x'
+
     layers = [
-        pd.read_excel("Produktionsdaten.xlsx", sheet_name=str(sheet_num) + ". Schicht")
+        pd.read_excel(
+            "Produktionsdaten.xlsx",
+            sheet_name=str(sheet_num) + ". Schicht",
+            converters={
+                'offene Leimfugen': is_equal_to_x,
+                'Hit & Miss': is_equal_to_x,
+                'seitl. Lamellenversatz': is_equal_to_x,
+            },
+        )
         for sheet_num in range(1, 6)
     ]
     column_renamings = {'Lamellenbreite - Fertigmaß [mm]': 'Lamellenbreite [mm]'}
@@ -17,14 +28,15 @@ def read_file():
         layer.rename(columns=column_renamings) for layer in layers
     ]
     conc_sheet = pd.concat(transformed_layers, axis='index')
+
+
     return conc_sheet
 
 
-def drop_useless_rows(df, *args):
+def drop_useless_rows(df, *columns):
     '''Erstellt einen Dataframe, der nur aus den gewünschten Spalten besteht.
     In diesem Dataframe werden alle Zeilen, die fehlende Werte enthalten gelöscht.'''
-    drop = [i for i in df if i not in args]
-    reduced_df = df.drop(drop, 1)
+    reduced_df = df[ list(columns) ]
     clean_df = reduced_df.dropna(axis=0)
     return clean_df
 
@@ -45,39 +57,23 @@ def nearest_neighbor(X, y):
     return clf
 
 
-def values_in_df(target, df):
-    '''Prüft, welche Werte in einer bestimmten Spalte eines DataFrames vorkommen und packt diese in eine Liste'''
-    value_list = []
-    for value in df[target]:
-        if value not in value_list:
-            value_list.append(value)
-    return value_list
-
-
 def values_in_list(two_d_list):
     '''Nimmt eine zweidimensionale Liste, dreht sie um 90 Grad und schaut,
     dass ein Wert in einer Zeile nur einmal vorkommt.'''
     arr = np.array(two_d_list).T
-    value_lists = []
-    for values in arr:
-        value_list = []
-        check_list = []
-        for value in values:
-            if value not in check_list:
-                value_list.append(value)
-                check_list.append(value)
-        if value_list:
-            value_lists.append(value_list)
-    return value_lists
+    return [
+        list(np.unique(values))
+        for values in arr
+    ]
 
 
 def all_combinations(df, *params):
     '''Gibt alle möglichen Kombinationen von einer variablen Anzahl an Listen zurück'''
-    value_list = [values_in_df(i, df) for i in params]
+    value_list = [df[i].unique() for i in params]
     if len(value_list) == 1:
         return "You are an idiot, you should at least enter two parameters!!"
     else:
-        prod = product(*value_list)
+        prod = list(product(*value_list))
         return prod
 
 
@@ -86,78 +82,86 @@ def find_best_combo(prod, classifier, minimum=True):
     einen ein Ergebnis voraus. Dieses wird in einer Liste gespeichert und zum Schluss
     wird je nachdem ob man minimieren oder maximieren will, der minimale oder der maximale
     Wert herausgesucht und die Liste, auf die man diesen Wert prognistizierte zurückgegeben.'''
-    predictions = []
-    for i in prod:
-        array_converted = np.array([ii for ii in i])
-        array_reshaped = array_converted.reshape(1, -1)
-        predictions.append(classifier.predict(array_reshaped))
+    predictions = [
+        classifier.predict(np.array(i).reshape(1, -1))
+        for i in prod
+    ]
     if minimum:
         index = np.argmin(predictions)
-        for counter, i in enumerate(prod):
-            params_list = np.array([ii for ii in i])
-            if counter == index:
-                return params_list
-
-    elif not minimum:
-        index = np.argmax(predictions)
-        for counter, i in enumerate(prod):
-            params_list = list(i)
-            if counter == index:
-                return params_list
     else:
-        return "You should enter True or False for minimum"
+        index = np.argmax(predictions)
+    return list(prod[index])
 
 
 def possible_combinations(prod, classifier):
     '''Verwendet den Classifier aus der nearest_neighbor() Funktion
     und gibt eine Liste mit allen Kombinationen zurück, die das gewünschte
     Ergebnis geliefert haben.'''
-    predictions = []
-    for i in prod:
-        array_converted = np.array([ii for ii in i])
-        array_reshaped = array_converted.reshape(1, -1)
-        predictions.append(classifier.predict(array_reshaped))
-    all_combos = []
-    for index, prediction in enumerate(predictions):
-        if prediction == 0:
-            all_combos.append(prod[index])
+    all_combos = [
+        i
+        for i in prod
+        if classifier.predict(
+            np.array(i).reshape(1, -1)
+        ) == False
+    ]
     possible_combos = values_in_list(all_combos)
     return possible_combos
 
 
-def predict(y_name, *x_names, minimum=True):
+def predict_linear(conc_sheet, y_name, x_names, minimum=True):
     '''Funktion, die alle oben definierten Funktionen verwendet.'''
-    conc_sheet = read_file()
     clean_df = drop_useless_rows(conc_sheet, y_name, *x_names)
-    try:
-        X = np.array([clean_df[i] for i in x_names]).T
-        y = np.array(clean_df[y_name])
-        clf = trainer(X, y)
-        prod = all_combinations(clean_df, *x_names)
-        p = [i for i in prod]
-        values = find_best_combo(p, clf, minimum)
-        return values
-    except ValueError:
-        X = np.array([conc_sheet[i] for i in x_names]).T
-        y_raw = np.array(conc_sheet[y_name])
-        y = []
-        for i in y_raw:
-            if i == 'x':
-                y.append(1)
-            else:
-                y.append(0)
-        clf = nearest_neighbor(X, y)
-        prod = all_combinations(conc_sheet, *x_names)
-        p = [i for i in prod]
-        possible_combos = possible_combinations(p, clf)
-        return possible_combos
+    X = np.array([clean_df[i] for i in x_names]).T
+    y = np.array(clean_df[y_name])
+    clf = trainer(X, y)
+    prod = all_combinations(clean_df, *x_names)
+    values = find_best_combo(prod, clf, minimum)
+    return values
+
+
+def predict_group(conc_sheet, y_name, x_names):
+    '''Funktion, die alle oben definierten Funktionen verwendet.'''
+    X = np.array([conc_sheet[i] for i in x_names]).T
+    y = np.array(conc_sheet[y_name])
+    clf = nearest_neighbor(X, y)
+    prod = all_combinations(conc_sheet, *x_names)
+    possible_combos = possible_combinations(prod, clf)
+    return possible_combos
 
 
 if __name__ == '__main__':
-    festigkeit = predict("Festigkeit %",
-                         "Scanparameter Röntgen",
-                         "Scanparameter Laser",
-                         "Scanparameter Farbkamera",
+    # read file only once because it's not fast
+    conc_sheet = read_file()
+
+    hitmiss = predict_group(
+                      conc_sheet=conc_sheet,
+                      y_name='Hit & Miss',
+                      x_names=[
+                          'Lamellenbreite [mm]',
+                          'Hobelmaß Lamellenhobel Breitseite [mm]',
+                          'Hobelmaß Keilzinkung Breitseite [mm]',
+                          'Hobelmaß Binderhobel Höhe [mm]'
+                      ])
+
+
+
+    hitmiss = predict_linear(
+                      conc_sheet=conc_sheet,
+                      y_name='Hit & Miss',
+                      x_names=[
+                          'Lamellenbreite [mm]',
+                          'Hobelmaß Lamellenhobel Breitseite [mm]',
+                          'Hobelmaß Keilzinkung Breitseite [mm]',
+                          'Hobelmaß Binderhobel Höhe [mm]'
+                      ])
+    festigkeit = predict_linear(
+                         conc_sheet=conc_sheet,
+                         y_name="Festigkeit %",
+                         x_names=[
+                             "Scanparameter Röntgen",
+                             "Scanparameter Laser",
+                             "Scanparameter Farbkamera",
+                         ],
                          minimum=False)
 
     print(f"Scanparameter Röntgen: {festigkeit[0]} \n"
@@ -165,10 +169,14 @@ if __name__ == '__main__':
           f"Scanparameter Farbkamera: {festigkeit[2]} \n \n")
 
 
-    ausbeute = predict("Ausbeute nach Fehlerkappung [%]",
-                       "Scanparameter Röntgen",
-                       "Scanparameter Laser",
-                       "Scanparameter Farbkamera",
+    ausbeute = predict_linear(
+                       conc_sheet=conc_sheet,
+                       y_name="Ausbeute nach Fehlerkappung [%]",
+                       x_names=[
+                           "Scanparameter Röntgen",
+                           "Scanparameter Laser",
+                           "Scanparameter Farbkamera",
+                       ],
                        minimum=False)
 
     print(f"Scanparameter Röntgen: {ausbeute[0]} \n"
@@ -176,13 +184,17 @@ if __name__ == '__main__':
           f"Scanparameter Farbkamera: {ausbeute[2]} \n \n")
 
 
-    delaminierung = predict('Delaminierung %',
-                            'Lamellenbreite [mm]',
-                            'Temperatur [°C]',
-                            'rel. Luftfeuchtigkeit [%]',
-                            'Leimfaktor',
-                            'Hobelmaß Lamellenhobel Breitseite [mm]',
-                            'Hobelmaß Keilzinkung Breitseite [mm]')
+    delaminierung = predict_linear(
+                            conc_sheet=conc_sheet,
+                            y_name='Delaminierung %',
+                            x_names=[
+                                'Lamellenbreite [mm]',
+                                'Temperatur [°C]',
+                                'rel. Luftfeuchtigkeit [%]',
+                                'Leimfaktor',
+                                'Hobelmaß Lamellenhobel Breitseite [mm]',
+                                'Hobelmaß Keilzinkung Breitseite [mm]'
+                            ])
 
     print(f"Lamellenbreite: {festigkeit[0]} \n"
           f"Temperatur: {festigkeit[1]} \n"
@@ -192,11 +204,15 @@ if __name__ == '__main__':
           f"Hoblemaß Keilzinkung Breitseite: {delaminierung[5]} \n \n")
 
 
-    hitmiss = predict('Hit & Miss',
-                      'Lamellenbreite [mm]',
-                      'Hobelmaß Lamellenhobel Breitseite [mm]',
-                      'Hobelmaß Keilzinkung Breitseite [mm]',
-                      'Hobelmaß Binderhobel Höhe [mm]')
+    hitmiss = predict_group(
+                      conc_sheet=conc_sheet,
+                      y_name='Hit & Miss',
+                      x_names=[
+                          'Lamellenbreite [mm]',
+                          'Hobelmaß Lamellenhobel Breitseite [mm]',
+                          'Hobelmaß Keilzinkung Breitseite [mm]',
+                          'Hobelmaß Binderhobel Höhe [mm]'
+                      ])
 
     print(f"Mögliche Einstllungen: \n"
           f"Lamellenbreite: {hitmiss[0]}\n"
@@ -205,9 +221,13 @@ if __name__ == '__main__':
           f"Hobelmaß Binderhobel Höhe: {hitmiss[3]} \n \n")
 
 
-    lamellenversatz = predict('seitl. Lamellenversatz',
-                              'Hobelmaß Keilzinkung Schmalseite [mm]',
-                              'Hobelmaß Binderhobel Breite [mm]')
+    lamellenversatz = predict_group(
+                              conc_sheet=conc_sheet,
+                              y_name='seitl. Lamellenversatz',
+                              x_names=[
+                                  'Hobelmaß Keilzinkung Schmalseite [mm]',
+                                  'Hobelmaß Binderhobel Breite [mm]'
+                              ])
 
 
     print(f"Mögliche Einstellungen: \n"
@@ -215,10 +235,14 @@ if __name__ == '__main__':
           f"Hobelmaß Binderhobel Breite: {lamellenversatz[1]} \n \n")
 
 
-    leimfugen = predict('offene Leimfugen',
-                        'Lamellenbreite [mm]',
-                        'Hobelmaß Lamellenhobel Breitseite [mm]',
-                        'Hobelmaß Keilzinkung Breitseite [mm]')
+    leimfugen = predict_group(
+                        conc_sheet=conc_sheet,
+                        y_name='offene Leimfugen',
+                        x_names=[
+                            'Lamellenbreite [mm]',
+                            'Hobelmaß Lamellenhobel Breitseite [mm]',
+                            'Hobelmaß Keilzinkung Breitseite [mm]'
+                        ])
 
     print(f"Mögliche Einstellungen: \n"
           f"Lamellenbreite: {leimfugen[0]} \n"
