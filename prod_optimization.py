@@ -87,14 +87,12 @@ def find_best_combo(prod, classifier, minimum=True):
             if counter == index:
                 return params_list
 
-    elif not minimum:
+    else:
         index = np.argmax(predictions)
         for counter, i in enumerate(prod):
             params_list = list(i)
             if counter == index:
                 return params_list
-    else:
-        return "You should enter True or False for minimum"
 
 
 def possible_combinations(prod, classifier):
