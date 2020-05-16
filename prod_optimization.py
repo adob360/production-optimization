@@ -125,9 +125,8 @@ def possible_combinations(prod, classifier):
     return possible_combos
 
 
-def predict(y_name, *x_names, minimum=True):
+def predict(conc_sheet, y_name, *x_names, minimum=True):
     '''Funktion, die alle oben definierten Funktionen verwendet.'''
-    conc_sheet = read_file()
     clean_df = drop_useless_rows(conc_sheet, y_name, *x_names)
     try:
         X = np.array([clean_df[i] for i in x_names]).T
@@ -154,7 +153,10 @@ def predict(y_name, *x_names, minimum=True):
 
 
 if __name__ == '__main__':
-    festigkeit = predict("Festigkeit %",
+    # read file only once because it's not fast
+    conc_sheet = read_file()
+    festigkeit = predict(conc_sheet=conc_sheet,
+                        "Festigkeit %",
                          "Scanparameter Röntgen",
                          "Scanparameter Laser",
                          "Scanparameter Farbkamera",
@@ -165,7 +167,8 @@ if __name__ == '__main__':
           f"Scanparameter Farbkamera: {festigkeit[2]} \n \n")
 
 
-    ausbeute = predict("Ausbeute nach Fehlerkappung [%]",
+    ausbeute = predict(conc_sheet=conc_sheet,
+                       "Ausbeute nach Fehlerkappung [%]",
                        "Scanparameter Röntgen",
                        "Scanparameter Laser",
                        "Scanparameter Farbkamera",
@@ -176,7 +179,8 @@ if __name__ == '__main__':
           f"Scanparameter Farbkamera: {ausbeute[2]} \n \n")
 
 
-    delaminierung = predict('Delaminierung %',
+    delaminierung = predict(conc_sheet=conc_sheet,
+                            'Delaminierung %',
                             'Lamellenbreite [mm]',
                             'Temperatur [°C]',
                             'rel. Luftfeuchtigkeit [%]',
@@ -192,7 +196,8 @@ if __name__ == '__main__':
           f"Hoblemaß Keilzinkung Breitseite: {delaminierung[5]} \n \n")
 
 
-    hitmiss = predict('Hit & Miss',
+    hitmiss = predict(conc_sheet=conc_sheet,
+                      'Hit & Miss',
                       'Lamellenbreite [mm]',
                       'Hobelmaß Lamellenhobel Breitseite [mm]',
                       'Hobelmaß Keilzinkung Breitseite [mm]',
@@ -205,7 +210,8 @@ if __name__ == '__main__':
           f"Hobelmaß Binderhobel Höhe: {hitmiss[3]} \n \n")
 
 
-    lamellenversatz = predict('seitl. Lamellenversatz',
+    lamellenversatz = predict(conc_sheet=conc_sheet,
+                              'seitl. Lamellenversatz',
                               'Hobelmaß Keilzinkung Schmalseite [mm]',
                               'Hobelmaß Binderhobel Breite [mm]')
 
@@ -215,7 +221,8 @@ if __name__ == '__main__':
           f"Hobelmaß Binderhobel Breite: {lamellenversatz[1]} \n \n")
 
 
-    leimfugen = predict('offene Leimfugen',
+    leimfugen = predict(conc_sheet=conc_sheet,
+                        'offene Leimfugen',
                         'Lamellenbreite [mm]',
                         'Hobelmaß Lamellenhobel Breitseite [mm]',
                         'Hobelmaß Keilzinkung Breitseite [mm]')
