@@ -104,14 +104,13 @@ def possible_combinations(prod, classifier):
     '''Verwendet den Classifier aus der nearest_neighbor() Funktion
     und gibt eine Liste mit allen Kombinationen zurück, die das gewünschte
     Ergebnis geliefert haben.'''
-    predictions = []
-    for i in prod:
-        array_converted = np.array([ii for ii in i])
-        array_reshaped = array_converted.reshape(1, -1)
-        predictions.append(classifier.predict(array_reshaped))
+    predictions = [
+        classifier.predict(np.array(i).reshape(1, -1))
+        for i in prod
+    ]
     all_combos = []
     for index, prediction in enumerate(predictions):
-        if prediction == 0:
+        if prediction == False:
             all_combos.append(prod[index])
     possible_combos = values_in_list(all_combos)
     return possible_combos
@@ -141,6 +140,18 @@ def predict_group(conc_sheet, y_name, x_names):
 if __name__ == '__main__':
     # read file only once because it's not fast
     conc_sheet = read_file()
+
+    hitmiss = predict_group(
+                      conc_sheet=conc_sheet,
+                      y_name='Hit & Miss',
+                      x_names=[
+                          'Lamellenbreite [mm]',
+                          'Hobelmaß Lamellenhobel Breitseite [mm]',
+                          'Hobelmaß Keilzinkung Breitseite [mm]',
+                          'Hobelmaß Binderhobel Höhe [mm]'
+                      ])
+
+
 
     hitmiss = predict_linear(
                       conc_sheet=conc_sheet,
