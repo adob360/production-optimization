@@ -67,7 +67,7 @@ def all_combinations(df, *params):
     if len(value_list) == 1:
         return "You are an idiot, you should at least enter two parameters!!"
     else:
-        prod = product(*value_list)
+        prod = list(product(*value_list))
         return prod
 
 
@@ -123,8 +123,7 @@ def predict(conc_sheet, y_name, x_names, minimum=True):
         y = np.array(clean_df[y_name])
         clf = trainer(X, y)
         prod = all_combinations(clean_df, *x_names)
-        p = [i for i in prod]
-        values = find_best_combo(p, clf, minimum)
+        values = find_best_combo(prod, clf, minimum)
         return values
     except ValueError:
         X = np.array([conc_sheet[i] for i in x_names]).T
@@ -137,8 +136,7 @@ def predict(conc_sheet, y_name, x_names, minimum=True):
                 y.append(0)
         clf = nearest_neighbor(X, y)
         prod = all_combinations(conc_sheet, *x_names)
-        p = [i for i in prod]
-        possible_combos = possible_combinations(p, clf)
+        possible_combos = possible_combinations(prod, clf)
         return possible_combos
 
 
