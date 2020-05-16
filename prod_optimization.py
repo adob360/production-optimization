@@ -6,8 +6,19 @@ from itertools import product
 
 def read_file():
     '''Liest ein Excel File ein und hängt die Tabellenblätter untereinander zusammen.'''
+    def is_equal_to_x(value):
+        return value == 'x'
+
     layers = [
-        pd.read_excel("Produktionsdaten.xlsx", sheet_name=str(sheet_num) + ". Schicht")
+        pd.read_excel(
+            "Produktionsdaten.xlsx",
+            sheet_name=str(sheet_num) + ". Schicht",
+            converters={
+                'offene Leimfugen': is_equal_to_x,
+                'Hit & Miss': is_equal_to_x,
+                'seitl. Lamellenversatz': is_equal_to_x,
+            },
+        )
         for sheet_num in range(1, 6)
     ]
     column_renamings = {'Lamellenbreite - Fertigmaß [mm]': 'Lamellenbreite [mm]'}
