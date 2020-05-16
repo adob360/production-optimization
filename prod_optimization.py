@@ -105,13 +105,18 @@ def possible_combinations(prod, classifier):
     und gibt eine Liste mit allen Kombinationen zurück, die das gewünschte
     Ergebnis geliefert haben.'''
     predictions = [
-        classifier.predict(np.array(i).reshape(1, -1))
+        {
+            "params": i,
+            "value": classifier.predict(np.array(i).reshape(1, -1))
+        }
         for i in prod
+
     ]
-    all_combos = []
-    for index, prediction in enumerate(predictions):
-        if prediction == False:
-            all_combos.append(prod[index])
+    all_combos = [
+        prediction['params']
+        for prediction in predictions
+        if prediction['value'] == False
+    ]
     possible_combos = values_in_list(all_combos)
     return possible_combos
 
