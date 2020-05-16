@@ -64,11 +64,9 @@ def values_in_list(two_d_list):
     value_lists = []
     for values in arr:
         value_list = []
-        check_list = []
         for value in values:
-            if value not in check_list:
+            if value not in value_list:
                 value_list.append(value)
-                check_list.append(value)
         if value_list:
             value_lists.append(value_list)
     return value_lists
