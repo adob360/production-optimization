@@ -78,13 +78,13 @@ def find_best_combo(prod, classifier, minimum=True):
     Wert herausgesucht und die Liste, auf die man diesen Wert prognistizierte zurückgegeben.'''
     predictions = []
     for i in prod:
-        array_converted = np.array([ii for ii in i])
+        array_converted = np.array(i)
         array_reshaped = array_converted.reshape(1, -1)
         predictions.append(classifier.predict(array_reshaped))
     if minimum:
         index = np.argmin(predictions)
         for counter, i in enumerate(prod):
-            params_list = np.array([ii for ii in i])
+            params_list = np.array(i)
             if counter == index:
                 return params_list
 
