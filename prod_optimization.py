@@ -131,13 +131,7 @@ def predict_linear(conc_sheet, y_name, x_names, minimum=True):
 def predict_group(conc_sheet, y_name, x_names):
     '''Funktion, die alle oben definierten Funktionen verwendet.'''
     X = np.array([conc_sheet[i] for i in x_names]).T
-    y_raw = np.array(conc_sheet[y_name])
-    y = []
-    for i in y_raw:
-        if i == 'x':
-            y.append(1)
-        else:
-            y.append(0)
+    y = np.array(conc_sheet[y_name])
     clf = nearest_neighbor(X, y)
     prod = all_combinations(conc_sheet, *x_names)
     possible_combos = possible_combinations(prod, clf)
