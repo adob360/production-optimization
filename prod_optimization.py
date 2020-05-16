@@ -61,12 +61,10 @@ def values_in_list(two_d_list):
     '''Nimmt eine zweidimensionale Liste, dreht sie um 90 Grad und schaut,
     dass ein Wert in einer Zeile nur einmal vorkommt.'''
     arr = np.array(two_d_list).T
-    value_lists = []
-    for values in arr:
-        value_lists.append(
-            list(np.unique(values))
-        )
-    return value_lists
+    return [
+        list(np.unique(values))
+        for values in arr
+    ]
 
 
 def all_combinations(df, *params):
