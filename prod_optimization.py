@@ -82,17 +82,9 @@ def find_best_combo(prod, classifier, minimum=True):
     ]
     if minimum:
         index = np.argmin(predictions)
-        for counter, i in enumerate(prod):
-            params_list = np.array(i)
-            if counter == index:
-                return params_list
-
     else:
         index = np.argmax(predictions)
-        for counter, i in enumerate(prod):
-            params_list = list(i)
-            if counter == index:
-                return params_list
+    return list(prod[index])
 
 
 def possible_combinations(prod, classifier):
