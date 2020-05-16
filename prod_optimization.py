@@ -28,6 +28,8 @@ def read_file():
         layer.rename(columns=column_renamings) for layer in layers
     ]
     conc_sheet = pd.concat(transformed_layers, axis='index')
+
+
     return conc_sheet
 
 
@@ -115,35 +117,48 @@ def possible_combinations(prod, classifier):
     return possible_combos
 
 
-def predict(conc_sheet, y_name, x_names, minimum=True):
+def predict_linear(conc_sheet, y_name, x_names, minimum=True):
     '''Funktion, die alle oben definierten Funktionen verwendet.'''
     clean_df = drop_useless_rows(conc_sheet, y_name, *x_names)
-    try:
-        X = np.array([clean_df[i] for i in x_names]).T
-        y = np.array(clean_df[y_name])
-        clf = trainer(X, y)
-        prod = all_combinations(clean_df, *x_names)
-        values = find_best_combo(prod, clf, minimum)
-        return values
-    except ValueError:
-        X = np.array([conc_sheet[i] for i in x_names]).T
-        y_raw = np.array(conc_sheet[y_name])
-        y = []
-        for i in y_raw:
-            if i == 'x':
-                y.append(1)
-            else:
-                y.append(0)
-        clf = nearest_neighbor(X, y)
-        prod = all_combinations(conc_sheet, *x_names)
-        possible_combos = possible_combinations(prod, clf)
-        return possible_combos
+    X = np.array([clean_df[i] for i in x_names]).T
+    y = np.array(clean_df[y_name])
+    clf = trainer(X, y)
+    prod = all_combinations(clean_df, *x_names)
+    values = find_best_combo(prod, clf, minimum)
+    return values
+
+
+def predict_group(conc_sheet, y_name, x_names):
+    '''Funktion, die alle oben definierten Funktionen verwendet.'''
+    X = np.array([conc_sheet[i] for i in x_names]).T
+    y_raw = np.array(conc_sheet[y_name])
+    y = []
+    for i in y_raw:
+        if i == 'x':
+            y.append(1)
+        else:
+            y.append(0)
+    clf = nearest_neighbor(X, y)
+    prod = all_combinations(conc_sheet, *x_names)
+    possible_combos = possible_combinations(prod, clf)
+    return possible_combos
 
 
 if __name__ == '__main__':
     # read file only once because it's not fast
     conc_sheet = read_file()
-    festigkeit = predict(conc_sheet=conc_sheet,
+
+    hitmiss = predict_linear(
+                      conc_sheet=conc_sheet,
+                      y_name='Hit & Miss',
+                      x_names=[
+                          'Lamellenbreite [mm]',
+                          'Hobelmaß Lamellenhobel Breitseite [mm]',
+                          'Hobelmaß Keilzinkung Breitseite [mm]',
+                          'Hobelmaß Binderhobel Höhe [mm]'
+                      ])
+    festigkeit = predict_linear(
+                         conc_sheet=conc_sheet,
                          y_name="Festigkeit %",
                          x_names=[
                              "Scanparameter Röntgen",
@@ -157,7 +172,8 @@ if __name__ == '__main__':
           f"Scanparameter Farbkamera: {festigkeit[2]} \n \n")
 
 
-    ausbeute = predict(conc_sheet=conc_sheet,
+    ausbeute = predict_linear(
+                       conc_sheet=conc_sheet,
                        y_name="Ausbeute nach Fehlerkappung [%]",
                        x_names=[
                            "Scanparameter Röntgen",
@@ -171,7 +187,8 @@ if __name__ == '__main__':
           f"Scanparameter Farbkamera: {ausbeute[2]} \n \n")
 
 
-    delaminierung = predict(conc_sheet=conc_sheet,
+    delaminierung = predict_linear(
+                            conc_sheet=conc_sheet,
                             y_name='Delaminierung %',
                             x_names=[
                                 'Lamellenbreite [mm]',
@@ -190,7 +207,8 @@ if __name__ == '__main__':
           f"Hoblemaß Keilzinkung Breitseite: {delaminierung[5]} \n \n")
 
 
-    hitmiss = predict(conc_sheet=conc_sheet,
+    hitmiss = predict_group(
+                      conc_sheet=conc_sheet,
                       y_name='Hit & Miss',
                       x_names=[
                           'Lamellenbreite [mm]',
@@ -206,7 +224,8 @@ if __name__ == '__main__':
           f"Hobelmaß Binderhobel Höhe: {hitmiss[3]} \n \n")
 
 
-    lamellenversatz = predict(conc_sheet=conc_sheet,
+    lamellenversatz = predict_group(
+                              conc_sheet=conc_sheet,
                               y_name='seitl. Lamellenversatz',
                               x_names=[
                                   'Hobelmaß Keilzinkung Schmalseite [mm]',
@@ -219,7 +238,8 @@ if __name__ == '__main__':
           f"Hobelmaß Binderhobel Breite: {lamellenversatz[1]} \n \n")
 
 
-    leimfugen = predict(conc_sheet=conc_sheet,
+    leimfugen = predict_group(
+                        conc_sheet=conc_sheet,
                         y_name='offene Leimfugen',
                         x_names=[
                             'Lamellenbreite [mm]',
