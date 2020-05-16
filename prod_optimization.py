@@ -63,9 +63,9 @@ def values_in_list(two_d_list):
     arr = np.array(two_d_list).T
     value_lists = []
     for values in arr:
-        value_list = list(np.unique(values))
-        if value_list:
-            value_lists.append(value_list)
+        value_lists.append(
+            list(np.unique(values))
+        )
     return value_lists
 
 
